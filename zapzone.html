@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>ZapZone ⚡</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d0d1a;color:#f0f0f0;max-width:440px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+.page{display:none;min-height:100vh;flex-direction:column}
+.page.active{display:flex}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input{font-family:inherit;outline:none}
+.btn{width:100%;padding:13px;border-radius:13px;font-weight:800;font-size:15px;color:#fff;border:none;cursor:pointer;margin-bottom:10px}
+.btn-purple{background:linear-gradient(135deg,#a855f7,#4361ee)}
+.btn-green{background:linear-gradient(135deg,#06d6a0,#4361ee)}
+.btn-outline{background:none;border:2px solid #2a2a50;color:#7070a0;border-radius:13px;padding:12px;font-weight:700;font-size:15px;width:100%}
+.inp{width:100%;background:#0d0d1a;border:2px solid #2a2a50;border-radius:12px;padding:11px 15px;color:#f0f0f0;font-size:15px;font-family:inherit;transition:border-color 0.2s}
+.inp:focus{border-color:#a855f7}
+.inp.light{background:#f0f4ff;color:#1a1a35;border-color:#d0d8f0}
+.inp.light:focus{border-color:#a855f7}
+.card{background:#1a1a35;border-radius:18px;padding:20px}
+.label{font-size:11px;color:#7070a0;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;display:block}
+.err{background:rgba(255,107,107,0.1);color:#ff6b6b;border-radius:10px;padding:8px 12px;font-size:13px;text-align:center;margin-bottom:10px}
+/* SPLASH */
+#splash{background:linear-gradient(135deg,#0d0d1a,#1a1a35);align-items:center;justify-content:center;text-align:center}
+.splash-icon{font-size:72px;animation:zap 0.8s ease-in-out infinite alternate}
+.splash-title{font-size:36px;font-weight:900;color:#ffe66d;margin-top:10px}
+.splash-sub{color:rgba(255,255,255,0.6);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.splash-bar{width:180px;height:5px;background:rgba(255,255,255,0.15);border-radius:5px;overflow:hidden;margin-top:28px}
+.splash-fill{width:0;height:100%;background:#ffe66d;border-radius:5px;animation:ld 1.8s ease-out forwards}
+@keyframes zap{from{transform:scale(1) rotate(-5deg)}to{transform:scale(1.15) rotate(5deg)}}
+@keyframes ld{from{width:0}to{width:100%}}
+/* AUTH */
+#login,#register{background:#0d0d1a;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.auth-box{width:100%;max-width:380px}
+.auth-logo{text-align:center;margin-bottom:24px}
+.auth-logo .icon{font-size:48px}
+.auth-logo .title{font-size:28px;font-weight:900;color:#ffe66d}
+.auth-logo .sub{color:#7070a0;font-size:12px;letter-spacing:2px;text-transform:uppercase}
+.auth-card{background:#1a1a35;border-radius:22px;padding:26px 22px;box-shadow:0 16px 48px rgba(0,0,0,0.3)}
+.auth-head{font-size:19px;font-weight:900;text-align:center;margin-bottom:18px}
+/* APP */
+#app{background:#0d0d1a}
+.app-content{flex:1;overflow-y:auto;padding-bottom:70px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:#111128;border-top:1px solid #2a2a50;display:flex;justify-content:space-around;padding:10px 0;z-index:100}
+.nav-btn{background:none;border:none;color:#7070a0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;font-family:inherit;font-size:10px;font-weight:500;transition:color 0.2s}
+.nav-btn.active{color:#a855f7;font-weight:800}
+.nav-btn .nav-icon{font-size:22px}
+/* CHAT */
+.chat-header{background:#111128;border-bottom:1px solid #2a2a50;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.chat-header-left .chat-title{font-weight:900;font-size:17px}
+.chat-header-left .online{color:#06d6a0;font-size:11px;margin-top:1px}
+.chat-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:#0a0a18;min-height:0}
+.chat-empty{text-align:center;padding-top:60px;color:#7070a0}
+.chat-empty .e-icon{font-size:48px;margin-bottom:12px}
+.msg-row{display:flex;gap:8px;align-items:flex-end}
+.msg-row.me{justify-content:flex-end}
+.msg-av{flex-shrink:0}
+.msg-body{max-width:72%}
+.msg-name{font-size:11px;color:#7070a0;margin-bottom:3px;margin-left:4px}
+.msg-bubble{border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:14px;line-height:1.5;background:#1a1a35;color:#f0f0f0}
+.msg-row.me .msg-bubble{border-radius:18px 18px 4px 18px;background:linear-gradient(135deg,#a855f7,#4361ee);color:#fff}
+.msg-time{font-size:10px;color:#7070a0;margin-top:2px;margin-left:4px}
+.msg-row.me .msg-time{text-align:right;margin-left:0;margin-right:4px}
+.system-msg{text-align:center;color:#7070a0;font-size:12px;padding:4px 0}
+.emoji-bar{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;background:#0a0a18}
+.emoji-btn{background:none;border:1px solid #2a2a50;border-radius:10px;padding:4px 8px;font-size:16px;flex-shrink:0}
+.chat-input-row{display:flex;gap:10px;padding:10px 14px;background:#111128;border-top:1px solid #2a2a50}
+.chat-inp{flex:1;background:#0a0a18;border:2px solid #2a2a50;border-radius:22px;padding:10px 16px;color:#f0f0f0;font-size:14px;font-family:inherit}
+.chat-inp:focus{border-color:#a855f7;outline:none}
+.send-btn{background:linear-gradient(135deg,#a855f7,#4361ee);border:none;border-radius:50%;width:44px;height:44px;font-size:20px;flex-shrink:0;cursor:pointer}
+/* QUIZ */
+.page-pad{padding:16px}
+.page-title{font-size:22px;font-weight:900}
+.page-sub{color:#7070a0;font-size:13px;margin-top:2px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.cat-card{background:#1a1a35;border:2px solid #2a2a50;border-radius:18px;padding:20px 14px;cursor:pointer;text-align:center;transition:all 0.2s;font-family:inherit}
+.cat-card:active{transform:scale(0.97)}
+.cat-icon{font-size:36px;margin-bottom:8px}
+.cat-name{font-weight:800;font-size:16px;color:#f0f0f0}
+.cat-info{color:#7070a0;font-size:12px;margin-top:4px}
+.cat-best{font-size:12px;font-weight:700;margin-top:4px}
+.q-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.q-back{background:none;border:none;color:#7070a0;font-size:22px;cursor:pointer}
+.q-cat{font-weight:800;font-size:16px}
+.q-stats{display:flex;gap:6px}
+.q-coin{background:#1a1a35;border-radius:10px;padding:4px 10px;color:#ffe66d;font-weight:700;font-size:13px}
+.q-streak{background:#ff6b6b;border-radius:10px;padding:4px 8px;color:#fff;font-weight:700;font-size:12px}
+.q-prog{background:#1a1a35;border-radius:8px;height:8px;margin-bottom:6px;overflow:hidden}
+.q-prog-fill{height:100%;border-radius:8px;transition:width 0.4s}
+.q-count{color:#7070a0;font-size:12px;text-align:right;margin-bottom:14px}
+.q-card{background:#1a1a35;border-radius:20px;padding:22px 18px;margin-bottom:18px;border-left:4px solid #06d6a0}
+.q-text{font-size:16px;font-weight:700;line-height:1.5;text-align:center}
+.q-options{display:flex;flex-direction:column;gap:10px}
+.q-opt{background:#1a1a35;border:2px solid #2a2a50;border-radius:14px;padding:13px 16px;color:#f0f0f0;font-size:14px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.q-opt .opt-letter{color:#7070a0;margin-right:8px;font-weight:800}
+.q-opt.correct{background:#0a2e1e;border-color:#06d6a0}
+.q-opt.wrong{background:#2e0a0a;border-color:#ff6b6b}
+.q-done{text-align:center;padding-top:20px}
+.q-done-icon{font-size:64px;margin-bottom:8px}
+.q-done-title{font-size:26px;font-weight:900;margin-bottom:6px}
+.q-done-sub{color:#7070a0;font-size:16px;margin-bottom:20px}
+.q-done-reward{color:#06d6a0;font-weight:800;margin:10px 0 24px;font-size:15px}
+/* LEADERBOARD */
+.board-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.refresh-btn{background:#1a1a35;border:1px solid #2a2a50;border-radius:12px;padding:8px 14px;color:#4ecdc4;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.board-empty{text-align:center;padding-top:60px;color:#7070a0}
+.board-row{display:flex;align-items:center;gap:12px;background:#1a1a35;border:2px solid #2a2a50;border-radius:16px;padding:12px 14px;margin-bottom:10px;transition:all 0.2s}
+.board-row.me{border-color:#a855f7;background:rgba(168,85,247,0.08)}
+.board-medal{font-size:22px;min-width:30px;text-align:center}
+.board-info{flex:1}
+.board-name{font-weight:800;font-size:15px}
+.board-user{color:#7070a0;font-size:12px}
+.board-cats{display:flex;gap:8px;margin-top:4px}
+.board-score{text-align:right}
+.board-total{font-weight:900;color:#ffe66d;font-size:20px}
+.board-pts{color:#7070a0;font-size:11px}
+/* PROFILE */
+.profile-card{background:#1a1a35;border-radius:22px;padding:24px 20px;text-align:center;margin-bottom:16px}
+.profile-name{font-weight:900;font-size:20px;margin-top:8px}
+.profile-user{color:#7070a0;font-size:13px}
+.xp-bar-wrap{margin-top:12px;background:#0a0a18;border-radius:10px;height:8px;overflow:hidden}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,#a855f7,#ffe66d);transition:width 0.5s}
+.xp-label{font-size:11px;color:#7070a0;margin-top:4px}
+.stats-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.stat-box{background:#1a1a35;border-radius:14px;padding:10px 14px;min-width:70px;text-align:center}
+.stat-icon{font-size:18px}
+.stat-val{font-weight:900;font-size:18px}
+.stat-lbl{color:#7070a0;font-size:10px}
+.records-card{background:#1a1a35;border-radius:18px;padding:16px;margin-bottom:16px}
+.records-title{font-weight:800;margin-bottom:12px}
+.rec-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.rec-icon{font-size:20px}
+.rec-bar-wrap{flex:1}
+.rec-labels{display:flex;justify-content:space-between;margin-bottom:3px}
+.rec-name{font-size:13px;font-weight:600}
+.rec-score{font-size:13px;font-weight:700}
+.rec-bar{background:#0a0a18;border-radius:4px;height:6px;overflow:hidden}
+.rec-bar-fill{height:100%;border-radius:4px}
+.profile-actions{display:flex;gap:10px}
+.logout-btn{background:none;border:2px solid #2a2a50;border-radius:13px;padding:13px 20px;color:#7070a0;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+/* AVATAR EDITOR */
+.av-editor{padding:16px}
+.av-editor-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.av-back{background:none;border:none;color:#7070a0;font-size:22px;cursor:pointer}
+.av-preview{text-align:center;margin-bottom:20px}
+.av-preview-box{display:inline-block;background:#1a1a35;border-radius:20px;padding:16px 24px}
+.av-section{margin-bottom:12px}
+.av-swatches{display:flex;gap:6px;flex-wrap:wrap}
+.av-swatch{background:none;border:2px solid transparent;border-radius:10px;padding:3px;cursor:pointer;transition:all 0.15s}
+.av-swatch.sel{border-color:#ffe66d}
+.av-dot{width:24px;height:24px;border-radius:50%}
+.av-text-opts{display:flex;gap:6px;flex-wrap:wrap}
+.av-text-opt{border:2px solid #2a2a50;border-radius:10px;background:#1a1a35;padding:5px 10px;cursor:pointer;color:#f0f0f0;font-size:12px;font-family:inherit;transition:all 0.15s}
+.av-text-opt.sel{border-color:#a855f7;background:rgba(168,85,247,0.2)}
+.gender-row{display:flex;gap:8px;margin-bottom:4px}
+.gender-btn{flex:1;background:#1a1a35;border:2px solid #2a2a50;border-radius:10px;padding:9px;color:#f0f0f0;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.gender-btn.sel{border-color:#a855f7;background:rgba(168,85,247,0.2)}
+/* THEME TOGGLE */
+.theme-btn{background:#1a1a35;border:1px solid #2a2a50;border-radius:20px;padding:5px 10px;color:#f0f0f0;cursor:pointer;font-size:14px;font-family:inherit}
+/* LIGHT THEME */
+body.light{background:#f0f4ff;color:#1a1a35}
+body.light .page{background:#f0f4ff}
+body.light #app{background:#f0f4ff}
+body.light .card{background:#fff}
+body.light .auth-card{background:#fff}
+body.light .nav{background:#fff;border-color:#d0d8f0}
+body.light .nav-btn{color:#7080a0}
+body.light .nav-btn.active{color:#a855f7}
+body.light .chat-header{background:#fff;border-color:#d0d8f0}
+body.light .chat-messages{background:#f0f4ff}
+body.light .msg-bubble{background:#fff;color:#1a1a35}
+body.light .emoji-bar{background:#f0f4ff}
+body.light .emoji-btn{border-color:#d0d8f0}
+body.light .chat-input-row{background:#fff;border-color:#d0d8f0}
+body.light .chat-inp{background:#f0f4ff;border-color:#d0d8f0;color:#1a1a35}
+body.light .q-opt,.body.light .cat-card,.body.light .q-card{background:#fff;border-color:#d0d8f0;color:#1a1a35}
+body.light .cat-card{background:#fff;border-color:#d0d8f0}
+body.light .q-opt{background:#fff;border-color:#d0d8f0;color:#1a1a35}
+body.light .q-card{background:#fff}
+body.light .q-prog{background:#e0e8ff}
+body.light .profile-card,.body.light .records-card,.body.light .stat-box{background:#fff}
+body.light .profile-card{background:#fff}
+body.light .records-card{background:#fff}
+body.light .stat-box{background:#fff}
+body.light .board-row{background:#fff;border-color:#d0d8f0}
+body.light .board-row.me{border-color:#a855f7}
+body.light .xp-bar-wrap,.body.light .rec-bar{background:#e0e8ff}
+body.light .xp-bar-wrap{background:#e0e8ff}
+body.light .rec-bar{background:#e0e8ff}
+body.light .auth-logo .title{color:#4361ee}
+body.light #splash{background:linear-gradient(135deg,#4361ee,#a855f7)}
+body.light .theme-btn{background:#fff;border-color:#d0d8f0}
+body.light .av-editor{background:#f0f4ff}
+body.light .av-preview-box{background:#fff}
+body.light .av-section .label{color:#7080a0}
+body.light .av-text-opt{background:#fff;border-color:#d0d8f0;color:#1a1a35}
+body.light .gender-btn{background:#fff;border-color:#d0d8f0;color:#1a1a35}
+body.light .inp{background:#f0f4ff;color:#1a1a35;border-color:#d0d8f0}
+body.light .q-opt.correct{background:#d4f7e8;border-color:#06d6a0}
+body.light .q-opt.wrong{background:#fde8e8;border-color:#ff6b6b}
+body.light .btn-outline{border-color:#d0d8f0;color:#7080a0}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash" class="page active">
+  <div class="splash-icon">⚡</div>
+  <div class="splash-title">ZapZone</div>
+  <div class="splash-sub">Quiz · Chat · Dominate</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="icon">⚡</div>
+      <div class="title">ZapZone</div>
+      <div class="sub">Quiz · Chat · Dominate</div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-head">🔑 Login</div>
+      <label class="label">Username</label>
+      <input id="l-user" class="inp" placeholder="your username" style="margin-bottom:13px">
+      <label class="label">Password</label>
+      <input id="l-pass" class="inp" type="password" placeholder="password" style="margin-bottom:13px">
+      <div id="l-err" class="err" style="display:none"></div>
+      <button class="btn btn-purple" onclick="doLogin()">⚡ Enter ZapZone</button>
+      <button class="btn-outline" onclick="showPage('register')">✨ Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="register" class="page">
+  <div class="auth-box" style="padding:20px;width:100%;max-width:380px;margin:0 auto">
+    <div class="auth-logo" style="margin-bottom:14px">
+      <div class="icon">✨</div>
+      <div class="title" style="font-size:22px">Join ZapZone!</div>
+      <div class="sub">Start with 100 🪙 free coins</div>
+    </div>
+    <!-- Avatar Preview -->
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="display:inline-block;background:#1a1a35;border-radius:20px;padding:14px 22px">
+        <div id="reg-av-preview"></div>
+        <div id="reg-av-name" style="font-weight:800;margin-top:6px;font-size:14px">Your Name</div>
+      </div>
+    </div>
+    <div class="auth-card">
+      <label class="label">Display Name</label>
+      <input id="r-name" class="inp" placeholder="e.g. Alex, Priya..." style="margin-bottom:13px" oninput="updateRegPreview()">
+      <label class="label">Username</label>
+      <input id="r-user" class="inp" placeholder="min 3 chars" style="margin-bottom:13px">
+      <label class="label">Password</label>
+      <input id="r-pass" class="inp" type="password" placeholder="min 4 chars" style="margin-bottom:13px">
+      <label class="label">Confirm Password</label>
+      <input id="r-pass2" class="inp" type="password" placeholder="same password again" style="margin-bottom:13px">
+      <!-- Quick Avatar -->
+      <div style="border-top:1px solid #2a2a50;padding-top:14px;margin-bottom:14px">
+        <div class="label" style="margin-bottom:10px">Quick Avatar</div>
+        <div class="av-section">
+          <div class="label">Gender</div>
+          <div class="gender-row">
+            <button class="gender-btn sel" id="g-boy" onclick="setRegGender('Boy')">👦 Boy</button>
+            <button class="gender-btn" id="g-girl" onclick="setRegGender('Girl')">👧 Girl</button>
+          </div>
+        </div>
+        <div class="av-section">
+          <div class="label">Skin Tone</div>
+          <div class="av-swatches" id="reg-skin"></div>
+        </div>
+        <div class="av-section">
+          <div class="label">Expression</div>
+          <div class="av-text-opts" id="reg-expr"></div>
+        </div>
+        <div class="av-section">
+          <div class="label">Accessory</div>
+          <div class="av-text-opts" id="reg-acc"></div>
+        </div>
+      </div>
+      <div id="r-err" class="err" style="display:none"></div>
+      <button class="btn btn-green" onclick="doRegister()">🎉 Join ZapZone!</button>
+      <button class="btn-outline" onclick="showPage('login')">← Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="page">
+  <div class="app-content" id="app-content">
+
+    <!-- CHAT TAB -->
+    <div id="tab-chat" style="display:flex;flex-direction:column;height:calc(100vh - 70px)">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-title">⚡ ZapZone Chat</div>
+          <div class="online" id="online-count">● Loading...</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+          <div id="header-av"></div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty">
+          <div class="e-icon">⚡</div>
+          <div style="font-weight:700">ZapZone is heating up!</div>
+          <div style="font-size:13px;margin-top:4px">Be the first to say something 🔥</div>
+        </div>
+      </div>
+      <div class="emoji-bar">
+        <button class="emoji-btn" onclick="addEmoji('👋')">👋</button>
+        <button class="emoji-btn" onclick="addEmoji('😂')">😂</button>
+        <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
+        <button class="emoji-btn" onclick="addEmoji('🎉')">🎉</button>
+        <button class="emoji-btn" onclick="addEmoji('🤔')">🤔</button>
+        <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
+        <button class="emoji-btn" onclick="addEmoji('💯')">💯</button>
+        <button class="emoji-btn" onclick="addEmoji('⚡')">⚡</button>
+      </div>
+      <div class="chat-input-row">
+        <input id="chat-inp" class="chat-inp" placeholder="Say something..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" onclick="sendMsg()">⚡</button>
+      </div>
+    </div>
+
+    <!-- QUIZ TAB -->
+    <div id="tab-quiz" class="page-pad" style="display:none">
+      <div id="quiz-cats">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><div class="page-title">🎯 Quiz Arena</div><div class="page-sub">Pick a category and dominate!</div></div>
+          <div id="q-coins-display" style="background:#1a1a35;border-radius:12px;padding:6px 12px;color:#ffe66d;font-weight:700">🪙 0</div>
+        </div>
+        <div class="cat-grid" id="cat-grid"></div>
+      </div>
+      <div id="quiz-game" style="display:none">
+        <div class="q-header">
+          <button class="q-back" onclick="backToCategories()">←</button>
+          <div class="q-cat" id="q-cat-title"></div>
+          <div class="q-stats">
+            <div class="q-coin" id="q-coin-show">🪙0</div>
+            <div class="q-streak" id="q-streak-show" style="display:none">🔥x0</div>
+          </div>
+        </div>
+        <div class="q-prog"><div class="q-prog-fill" id="q-prog-fill"></div></div>
+        <div class="q-count" id="q-count"></div>
+        <div class="q-card" id="q-card"><div class="q-text" id="q-text"></div></div>
+        <div class="q-options" id="q-options"></div>
+      </div>
+      <div id="quiz-done" style="display:none">
+        <div class="q-done">
+          <div class="q-done-icon" id="done-icon"></div>
+          <div class="q-done-title" id="done-title"></div>
+          <div class="q-done-sub" id="done-sub"></div>
+          <div id="done-av" style="margin:0 auto;display:inline-block"></div>
+          <div class="q-done-reward" id="done-reward"></div>
+          <button class="btn btn-purple" onclick="playAgain()">🔄 Play Again</button>
+          <button class="btn" style="background:linear-gradient(135deg,#a855f7,#f72585)" onclick="backToCategories()">📚 Change Category</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div id="tab-board" class="page-pad" style="display:none">
+      <div class="board-header">
+        <div><div class="page-title">🏆 Top Players</div><div class="page-sub">Global ZapZone rankings</div></div>
+        <button class="refresh-btn" onclick="loadBoard()">🔄 Refresh</button>
+      </div>
+      <div id="board-list">
+        <div class="board-empty">
+          <div style="font-size:48px;margin-bottom:12px">⚡</div>
+          <div style="font-weight:700">No scores yet!</div>
+          <div style="font-size:13px;margin-top:4px">Play a quiz to get on the board</div>
+          <button class="refresh-btn" style="margin-top:16px" onclick="loadBoard()">Load Scores</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div id="tab-profile" style="display:none">
+      <div id="profile-view" class="page-pad">
+        <div class="profile-card">
+          <div id="profile-av" style="display:inline-block"></div>
+          <div class="profile-name" id="profile-name"></div>
+          <div class="profile-user" id="profile-user"></div>
+          <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar"></div></div>
+          <div class="xp-label" id="xp-label"></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-icon">🪙</div><div class="stat-val" id="s-coins">0</div><div class="stat-lbl">Coins</div></div>
+          <div class="stat-box"><div class="stat-icon">⚡</div><div class="stat-val" id="s-xp">0</div><div class="stat-lbl">XP</div></div>
+          <div class="stat-box"><div class="stat-icon">🏆</div><div class="stat-val" id="s-level">1</div><div class="stat-lbl">Level</div></div>
+        </div>
+        <div class="records-card">
+          <div class="records-title">🎯 Your Records</div>
+          <div id="records-list"></div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn btn-purple" style="margin-bottom:0;flex:1" onclick="showAvatarEditor()">🎨 Edit Avatar</button>
+          <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+        </div>
+      </div>
+      <!-- Avatar Editor -->
+      <div id="av-editor" class="av-editor" style="display:none">
+        <div class="av-editor-head">
+          <button class="av-back" onclick="hideAvatarEditor()">←</button>
+          <div style="font-weight:900;font-size:19px">🎨 Edit Avatar</div>
+        </div>
+        <div class="av-preview"><div class="av-preview-box"><div id="edit-av-preview"></div></div></div>
+        <div class="av-section">
+          <div class="label">Gender</div>
+          <div class="gender-row">
+            <button class="gender-btn" id="e-g-boy" onclick="setEditGender('Boy')">👦 Boy</button>
+            <button class="gender-btn" id="e-g-girl" onclick="setEditGender('Girl')">👧 Girl</button>
+          </div>
+        </div>
+        <div class="av-section"><div class="label">Skin Tone</div><div class="av-swatches" id="e-skin"></div></div>
+        <div class="av-section"><div class="label">Hair Color</div><div class="av-swatches" id="e-hairCol"></div></div>
+        <div class="av-section"><div class="label">Shirt Color</div><div class="av-swatches" id="e-shirt"></div></div>
+        <div class="av-section"><div class="label">Hair Style</div><div class="av-text-opts" id="e-hair"></div></div>
+        <div class="av-section"><div class="label">Expression</div><div class="av-text-opts" id="e-expr"></div></div>
+        <div class="av-section" style="margin-bottom:20px"><div class="label">Accessory</div><div class="av-text-opts" id="e-acc"></div></div>
+        <button class="btn btn-green" onclick="saveAvatar()">✅ Save Avatar</button>
+      </div>
+    </div>
+
+  </div><!-- end app-content -->
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <button class="nav-btn active" id="nav-chat" onclick="switchTab('chat')"><span class="nav-icon">⚡</span>Chat</button>
+    <button class="nav-btn" id="nav-quiz" onclick="switchTab('quiz')"><span class="nav-icon">🎯</span>Quiz</button>
+    <button class="nav-btn" id="nav-board" onclick="switchTab('board');loadBoard()"><span class="nav-icon">🏆</span>Top</button>
+    <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<script>
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDy7Cip2itCD8gsQIuk-fHjQkGQDzTxdPc",
+  authDomain: "zapzone-98727.firebaseapp.com",
+  databaseURL: "https://zapzone-98727-default-rtdb.firebaseio.com",
+  projectId: "zapzone-98727",
+  storageBucket: "zapzone-98727.firebasestorage.app",
+  messagingSenderId: "884845281907",
+  appId: "1:884845281907:web:6be3cd071feb6a058f2006"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// ─── AVATAR CONFIG ────────────────────────────────────────────────────────────
+const SKINS = ["#FDBCB4","#F1C27D","#E0AC69","#C68642","#8D5524","#FFDBAC"];
+const HAIR_COLS = ["#1a0a00","#4A2C2A","#C9A06A","#ffe66d","#E63946","#a855f7","#00B4D8","#06D6A0"];
+const BOY_HAIR = ["spiky","messy","short","curly","mohawk","bald"];
+const GIRL_HAIR = ["ponytail","pigtails","long","bun","curly-long","bob"];
+const EXPRESSIONS = ["happy","wink","cool","silly","surprised","smug"];
+const ACCESSORIES = ["none","party-hat","sunglasses","crown","cat-ears","headphones"];
+const SHIRTS = ["#ff6b6b","#4361ee","#06d6a0","#fb8500","#a855f7","#4ecdc4","#f72585","#ffe66d"];
+const DEF_CFG = {gender:"Boy",skin:SKINS[0],hairCol:HAIR_COLS[0],hair:"short",expr:"happy",acc:"none",shirt:SHIRTS[0],name:"Player"};
+
+// ─── QUIZ DATA ─────────────────────────────────────────────────────────────────
+const QUIZ = {
+  Science:{icon:"🔬",color:"#06d6a0",questions:[
+    {q:"Chemical symbol for water?",o:["H2O","CO2","O2","H2SO4"],a:0},
+    {q:"Bones in adult human body?",o:["156","186","206","226"],a:2},
+    {q:"The Red Planet?",o:["Venus","Mars","Jupiter","Saturn"],a:1},
+    {q:"Gas plants use for photosynthesis?",o:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"],a:2},
+    {q:"Hardest natural substance?",o:["Gold","Iron","Diamond","Ruby"],a:2},
+    {q:"Organ that pumps blood?",o:["Brain","Lung","Liver","Heart"],a:3},
+    {q:"How many legs does a spider have?",o:["6","8","10","12"],a:1},
+    {q:"Powerhouse of the cell?",o:["Nucleus","Ribosome","Mitochondria","Vacuole"],a:2},
+  ]},
+  Maths:{icon:"🔢",color:"#4361ee",questions:[
+    {q:"What is 12 × 12?",o:["124","132","144","148"],a:2},
+    {q:"What is √196?",o:["12","13","14","15"],a:2},
+    {q:"25% of 200?",o:["25","40","50","75"],a:2},
+    {q:"2 to the power of 10?",o:["512","1024","2048","256"],a:1},
+    {q:"Angles in a triangle sum to?",o:["90°","120°","180°","360°"],a:2},
+    {q:"What is 17 × 8?",o:["126","130","136","142"],a:2},
+    {q:"What is 1000 ÷ 8?",o:["115","120","125","130"],a:2},
+    {q:"Sides in a hexagon?",o:["5","6","7","8"],a:1},
+  ]},
+  Geography:{icon:"🌍",color:"#fb8500",questions:[
+    {q:"Capital of Australia?",o:["Sydney","Melbourne","Brisbane","Canberra"],a:3},
+    {q:"Longest river in the world?",o:["Amazon","Mississippi","Nile","Yangtze"],a:2},
+    {q:"Largest continent?",o:["Africa","North America","Asia","Europe"],a:2},
+    {q:"Smallest country?",o:["Monaco","San Marino","Vatican City","Liechtenstein"],a:2},
+    {q:"Largest ocean?",o:["Atlantic","Indian","Arctic","Pacific"],a:3},
+    {q:"Capital of Japan?",o:["Osaka","Kyoto","Tokyo","Hiroshima"],a:2},
+    {q:"Largest desert?",o:["Arabian","Gobi","Sahara","Antarctic"],a:3},
+    {q:"How many continents?",o:["5","6","7","8"],a:2},
+  ]},
+  History:{icon:"📜",color:"#ff6b6b",questions:[
+    {q:"Who invented the telephone?",o:["Thomas Edison","Nikola Tesla","Alexander Graham Bell","Marconi"],a:2},
+    {q:"Year WW2 ended?",o:["1943","1944","1945","1946"],a:2},
+    {q:"First US President?",o:["Abraham Lincoln","John Adams","Thomas Jefferson","George Washington"],a:3},
+    {q:"Who painted the Mona Lisa?",o:["Michelangelo","Raphael","Leonardo da Vinci","Donatello"],a:2},
+    {q:"India's independence year?",o:["1945","1946","1947","1948"],a:2},
+    {q:"Who discovered America in 1492?",o:["Vasco da Gama","Ferdinand Magellan","Christopher Columbus","John Cabot"],a:2},
+    {q:"Who invented the light bulb?",o:["Nikola Tesla","Thomas Edison","Alexander Fleming","James Watt"],a:1},
+    {q:"City of the Eiffel Tower?",o:["London","Berlin","Rome","Paris"],a:3},
+  ]},
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let userData = null;
+let regCfg = Object.assign({},DEF_CFG);
+let editCfg = Object.assign({},DEF_CFG);
+let isDark = true;
+let qCat = null, qi = 0, qScore = 0, qChosen = null, qStreak = 0, qShuffled = [];
+let msgListener = null;
+let onlineInterval = null;
+
+// ─── AVATAR SVG ───────────────────────────────────────────────────────────────
+function makeAvatar(cfg, size) {
+  size = size || 80;
+  var c = cfg || DEF_CFG;
+  var skin = c.skin || SKINS[0];
+  var hc = c.hairCol || HAIR_COLS[0];
+  var hair = c.hair || "short";
+  var expr = c.expr || "happy";
+  var acc = c.acc || "none";
+  var shirt = c.shirt || SHIRTS[0];
+  var gender = c.gender || "Boy";
+
+  var hairSVG = "";
+  if(hair==="spiky") hairSVG='<rect x="26" y="20" width="68" height="20" rx="6" fill="'+hc+'"/><polygon points="30,22 35,8 40,22" fill="'+hc+'"/><polygon points="40,22 45,8 50,22" fill="'+hc+'"/><polygon points="50,22 55,8 60,22" fill="'+hc+'"/><polygon points="60,22 65,8 70,22" fill="'+hc+'"/><polygon points="70,22 75,8 80,22" fill="'+hc+'"/>';
+  else if(hair==="messy") hairSVG='<ellipse cx="60" cy="28" rx="36" ry="16" fill="'+hc+'"/><ellipse cx="32" cy="36" rx="10" ry="8" fill="'+hc+'"/><ellipse cx="88" cy="36" rx="10" ry="8" fill="'+hc+'"/>';
+  else if(hair==="short") hairSVG='<rect x="26" y="20" width="68" height="20" rx="10" fill="'+hc+'"/>';
+  else if(hair==="curly") hairSVG='<ellipse cx="60" cy="26" rx="36" ry="14" fill="'+hc+'"/><circle cx="34" cy="34" r="9" fill="'+hc+'"/><circle cx="46" cy="34" r="9" fill="'+hc+'"/><circle cx="60" cy="34" r="9" fill="'+hc+'"/><circle cx="74" cy="34" r="9" fill="'+hc+'"/><circle cx="86" cy="34" r="9" fill="'+hc+'"/>';
+  else if(hair==="mohawk") hairSVG='<rect x="26" y="26" width="14" height="14" rx="4" fill="'+hc+'"/><rect x="80" y="26" width="14" height="14" rx="4" fill="'+hc+'"/><rect x="50" y="4" width="20" height="36" rx="8" fill="'+hc+'"/>';
+  else if(hair==="ponytail") hairSVG='<rect x="26" y="20" width="68" height="18" rx="9" fill="'+hc+'"/><ellipse cx="92" cy="40" rx="10" ry="22" fill="'+hc+'"/><circle cx="92" cy="24" r="6" fill="'+hc+'"/>';
+  else if(hair==="pigtails") hairSVG='<rect x="26" y="20" width="68" height="18" rx="9" fill="'+hc+'"/><ellipse cx="20" cy="52" rx="10" ry="20" fill="'+hc+'"/><ellipse cx="100" cy="52" rx="10" ry="20" fill="'+hc+'"/>';
+  else if(hair==="long") hairSVG='<rect x="26" y="20" width="68" height="18" rx="9" fill="'+hc+'"/><rect x="18" y="30" width="14" height="60" rx="7" fill="'+hc+'"/><rect x="88" y="30" width="14" height="60" rx="7" fill="'+hc+'"/>';
+  else if(hair==="bun") hairSVG='<rect x="26" y="26" width="68" height="14" rx="7" fill="'+hc+'"/><circle cx="60" cy="16" r="14" fill="'+hc+'"/><circle cx="60" cy="16" r="8" fill="'+hc+'" opacity="0.6"/>';
+  else if(hair==="curly-long") hairSVG='<ellipse cx="60" cy="26" rx="36" ry="14" fill="'+hc+'"/><ellipse cx="22" cy="60" rx="12" ry="30" fill="'+hc+'"/><ellipse cx="98" cy="60" rx="12" ry="30" fill="'+hc+'"/>';
+  else if(hair==="bob") hairSVG='<rect x="26" y="20" width="68" height="18" rx="9" fill="'+hc+'"/><rect x="18" y="30" width="12" height="30" rx="6" fill="'+hc+'"/><rect x="90" y="30" width="12" height="30" rx="6" fill="'+hc+'"/>';
+
+  var exprSVG = "";
+  if(expr==="happy") exprSVG='<circle cx="47" cy="57" r="7" fill="white"/><circle cx="73" cy="57" r="7" fill="white"/><circle cx="48" cy="58" r="4" fill="#222"/><circle cx="74" cy="58" r="4" fill="#222"/><path d="M50 74 Q60 82 70 74" stroke="#c0706b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==="wink") exprSVG='<circle cx="47" cy="57" r="7" fill="white"/><circle cx="48" cy="58" r="4" fill="#222"/><path d="M67 54 Q73 62 79 54" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M50 74 Q60 82 70 74" stroke="#c0706b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==="cool") exprSVG='<rect x="38" y="52" width="20" height="11" rx="5" fill="#1a1a2e"/><rect x="62" y="52" width="20" height="11" rx="5" fill="#1a1a2e"/><line x1="58" y1="57" x2="62" y2="57" stroke="#333" stroke-width="2"/><path d="M50 74 Q60 82 70 74" stroke="#c0706b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==="silly") exprSVG='<circle cx="47" cy="57" r="7" fill="white"/><circle cx="73" cy="57" r="7" fill="white"/><circle cx="49" cy="55" r="4" fill="#222"/><circle cx="71" cy="59" r="4" fill="#222"/><ellipse cx="60" cy="76" rx="10" ry="7" fill="#E63946"/><ellipse cx="60" cy="79" rx="6" ry="4" fill="#ff9999"/>';
+  else if(expr==="surprised") exprSVG='<circle cx="47" cy="57" r="8" fill="white"/><circle cx="73" cy="57" r="8" fill="white"/><circle cx="47" cy="57" r="5" fill="#222"/><circle cx="73" cy="57" r="5" fill="#222"/><ellipse cx="60" cy="76" rx="9" ry="8" fill="#222"/>';
+  else if(expr==="smug") exprSVG='<circle cx="47" cy="57" r="7" fill="white"/><circle cx="73" cy="57" r="7" fill="white"/><circle cx="48" cy="58" r="4" fill="#222"/><circle cx="74" cy="58" r="4" fill="#222"/><path d="M52 74 Q63 78 70 72" stroke="#c0706b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+
+  var accSVG = "";
+  if(acc==="party-hat") accSVG='<polygon points="60,2 38,30 82,30" fill="#a855f7" opacity="0.9"/><rect x="38" y="28" width="44" height="6" rx="3" fill="#ffe66d"/><circle cx="42" cy="28" r="3" fill="#ff6b6b"/><circle cx="52" cy="30" r="3" fill="#4361ee"/><circle cx="62" cy="28" r="3" fill="#06d6a0"/><circle cx="72" cy="30" r="3" fill="#fb8500"/>';
+  else if(acc==="sunglasses") accSVG='<rect x="36" y="50" width="24" height="14" rx="6" fill="#1a1a1a" opacity="0.9"/><rect x="60" y="50" width="24" height="14" rx="6" fill="#1a1a1a" opacity="0.9"/><rect x="34" y="55" width="4" height="3" rx="2" fill="#1a1a1a"/><rect x="82" y="55" width="4" height="3" rx="2" fill="#1a1a1a"/>';
+  else if(acc==="crown") accSVG='<polygon points="28,32 38,14 50,26 60,10 70,26 82,14 92,32" fill="#ffe66d"/><rect x="28" y="30" width="64" height="8" rx="2" fill="#ffe66d"/><circle cx="60" cy="16" r="5" fill="#ff6b6b"/><circle cx="38" cy="22" r="4" fill="#4361ee"/><circle cx="82" cy="22" r="4" fill="#06d6a0"/>';
+  else if(acc==="cat-ears") accSVG='<polygon points="26,32 20,8 42,26" fill="'+hc+'"/><polygon points="94,32 100,8 78,26" fill="'+hc+'"/><polygon points="28,30 22,12 40,26" fill="'+skin+'" opacity="0.5"/><polygon points="92,30 98,12 80,26" fill="'+skin+'" opacity="0.5"/>';
+  else if(acc==="headphones") accSVG='<rect x="18" y="46" width="12" height="18" rx="6" fill="#333"/><rect x="90" y="46" width="12" height="18" rx="6" fill="#333"/><path d="M22 52 Q60 26 98 52" fill="none" stroke="#333" stroke-width="5"/>';
+
+  var girlExtra = gender==="Girl" ? '<circle cx="20" cy="64" r="3" fill="#ffe66d"/><circle cx="100" cy="64" r="3" fill="#ffe66d"/><ellipse cx="38" cy="68" rx="8" ry="5" fill="#ffb3c1" opacity="0.45"/><ellipse cx="82" cy="68" rx="8" ry="5" fill="#ffb3c1" opacity="0.45"/>' : "";
+
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+    +'<rect x="28" y="98" width="64" height="28" rx="14" fill="'+shirt+'"/>'
+    +'<rect x="50" y="88" width="20" height="16" rx="6" fill="'+skin+'"/>'
+    +'<ellipse cx="60" cy="62" rx="34" ry="34" fill="'+skin+'"/>'
+    +hairSVG
+    +'<ellipse cx="26" cy="62" rx="6" ry="8" fill="'+skin+'"/>'
+    +'<ellipse cx="94" cy="62" rx="6" ry="8" fill="'+skin+'"/>'
+    +girlExtra
+    +exprSVG
+    +'<ellipse cx="60" cy="70" rx="4" ry="3" fill="'+skin+'" style="filter:brightness(0.85)"/>'
+    +accSVG
+    +'</svg>';
+}
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  document.querySelector('.theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
+
+// ─── PAGES ────────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── INIT REG AVATAR PICKERS ─────────────────────────────────────────────────
+function initRegPickers() {
+  var skinEl = document.getElementById('reg-skin');
+  SKINS.forEach(function(s,i){
+    var b = document.createElement('button');
+    b.className = 'av-swatch' + (i===0?' sel':'');
+    b.innerHTML = '<div class="av-dot" style="background:'+s+'"></div>';
+    b.onclick = function(){ regCfg.skin=s; updateRegPreview(); document.querySelectorAll('#reg-skin .av-swatch').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel'); };
+    skinEl.appendChild(b);
+  });
+  var exprEl = document.getElementById('reg-expr');
+  EXPRESSIONS.forEach(function(e,i){
+    var b = document.createElement('button');
+    b.className = 'av-text-opt' + (i===0?' sel':'');
+    b.textContent = e;
+    b.onclick = function(){ regCfg.expr=e; updateRegPreview(); document.querySelectorAll('#reg-expr .av-text-opt').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel'); };
+    exprEl.appendChild(b);
+  });
+  var accEl = document.getElementById('reg-acc');
+  ACCESSORIES.forEach(function(a,i){
+    var b = document.createElement('button');
+    b.className = 'av-text-opt' + (i===0?' sel':'');
+    b.textContent = a;
+    b.onclick = function(){ regCfg.acc=a; updateRegPreview(); document.querySelectorAll('#reg-acc .av-text-opt').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel'); };
+    accEl.appendChild(b);
+  });
+  updateRegPreview();
+}
+
+function setRegGender(g) {
+  regCfg.gender = g;
+  regCfg.hair = g==='Boy'?'short':'ponytail';
+  document.getElementById('g-boy').classList.toggle('sel',g==='Boy');
+  document.getElementById('g-girl').classList.toggle('sel',g==='Girl');
+  updateRegPreview();
+}
+
+function updateRegPreview() {
+  var name = document.getElementById('r-name').value.trim() || 'You';
+  regCfg.name = name;
+  document.getElementById('reg-av-preview').innerHTML = makeAvatar(regCfg, 90);
+  document.getElementById('reg-av-name').textContent = name;
+}
+
+// ─── INIT EDIT PICKERS ────────────────────────────────────────────────────────
+function initEditPickers() {
+  function makeSwatch(containerId, arr, key, isColor) {
+    var el = document.getElementById(containerId);
+    el.innerHTML = '';
+    arr.forEach(function(v,i){
+      var b = document.createElement('button');
+      b.className = 'av-swatch' + (editCfg[key]===v?' sel':'');
+      if(isColor) b.innerHTML = '<div class="av-dot" style="background:'+v+'"></div>';
+      else { b.className = 'av-text-opt' + (editCfg[key]===v?' sel':''); b.textContent = v; }
+      b.onclick = function(){
+        editCfg[key]=v; updateEditPreview();
+        var cls = isColor ? '.av-swatch' : '.av-text-opt';
+        el.querySelectorAll(cls).forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel');
+      };
+      el.appendChild(b);
+    });
+  }
+  makeSwatch('e-skin', SKINS, 'skin', true);
+  makeSwatch('e-hairCol', HAIR_COLS, 'hairCol', true);
+  makeSwatch('e-shirt', SHIRTS, 'shirt', true);
+  var hairs = editCfg.gender==='Boy' ? BOY_HAIR : GIRL_HAIR;
+  makeSwatch('e-hair', hairs, 'hair', false);
+  makeSwatch('e-expr', EXPRESSIONS, 'expr', false);
+  makeSwatch('e-acc', ACCESSORIES, 'acc', false);
+  document.getElementById('e-g-boy').classList.toggle('sel', editCfg.gender==='Boy');
+  document.getElementById('e-g-girl').classList.toggle('sel', editCfg.gender==='Girl');
+  updateEditPreview();
+}
+
+function setEditGender(g) {
+  editCfg.gender = g;
+  editCfg.hair = g==='Boy' ? 'short' : 'ponytail';
+  initEditPickers();
+}
+
+function updateEditPreview() {
+  document.getElementById('edit-av-preview').innerHTML = makeAvatar(editCfg, 110);
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  var username = document.getElementById('l-user').value.trim().toLowerCase();
+  var pass = document.getElementById('l-pass').value;
+  if(!username || !pass) { showErr('l-err','Fill in username and password!'); return; }
+  hideErr('l-err');
+  // Look up email from username
+  try {
+    var snap = await db.ref('usernames/'+username).once('value');
+    if(!snap.exists()) { showErr('l-err','Account not found — register first!'); return; }
+    var email = snap.val();
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    showErr('l-err', e.code==='auth/wrong-password' ? 'Wrong password! 🔐' : 'Login failed: '+e.message);
+  }
+}
+
+async function doRegister() {
+  var name = document.getElementById('r-name').value.trim();
+  var username = document.getElementById('r-user').value.trim().toLowerCase();
+  var pass = document.getElementById('r-pass').value;
+  var pass2 = document.getElementById('r-pass2').value;
+  if(!name||!username||!pass) { showErr('r-err','Fill in all fields!'); return; }
+  if(pass!==pass2) { showErr('r-err',"Passwords don't match!"); return; }
+  if(pass.length<4) { showErr('r-err','Password needs 4+ characters!'); return; }
+  if(username.length<3) { showErr('r-err','Username needs 3+ characters!'); return; }
+  hideErr('r-err');
+  try {
+    var snap = await db.ref('usernames/'+username).once('value');
+    if(snap.exists()) { showErr('r-err','Username taken! Try another 😅'); return; }
+    var email = username+'@zapzone.app';
+    var cred = await auth.createUserWithEmailAndPassword(email, pass);
+    var uid = cred.user.uid;
+    var cfg = Object.assign({},regCfg,{name:name});
+    var data = {name:name, username:username, avatar:cfg, coins:100, xp:0, scores:{}};
+    await db.ref('users/'+uid).set(data);
+    await db.ref('usernames/'+username).set(email);
+    // Welcome message
+    await db.ref('messages').push({uid:uid,name:name,avatar:cfg,text:'🌟 '+name+' just joined ZapZone! Say hi! 👋',ts:Date.now(),system:true});
+  } catch(e) {
+    showErr('r-err','Error: '+e.message);
+  }
+}
+
+function doLogout() {
+  if(msgListener) { db.ref('messages').off('child_added',msgListener); msgListener=null; }
+  if(onlineInterval) { clearInterval(onlineInterval); }
+  auth.signOut();
+}
+
+// ─── AUTH STATE ───────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(async function(user) {
+  if(user) {
+    currentUser = user;
+    var snap = await db.ref('users/'+user.uid).once('value');
+    userData = snap.val() || {};
+    userData.uid = user.uid;
+    enterApp();
+  } else {
+    currentUser = null;
+    userData = null;
+    showPage('login');
+  }
+});
+
+// ─── ENTER APP ────────────────────────────────────────────────────────────────
+function enterApp() {
+  showPage('app');
+  switchTab('chat');
+  updateHeaderAvatar();
+  initChat();
+  startOnlineTracking();
+  buildCatGrid();
+  updateProfile();
+}
+
+function updateHeaderAvatar() {
+  if(!userData) return;
+  document.getElementById('header-av').innerHTML = makeAvatar(userData.avatar||DEF_CFG, 40);
+}
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+var chatInited = false;
+function initChat() {
+  if(chatInited) return;
+  chatInited = true;
+  var messagesEl = document.getElementById('chat-messages');
+  var first = true;
+  db.ref('messages').limitToLast(50).on('child_added', function(snap) {
+    var m = snap.val();
+    if(!m) return;
+    if(first) { messagesEl.innerHTML = ''; first = false; }
+    renderMsg(m, messagesEl);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+}
+
+function renderMsg(m, container) {
+  var isMe = currentUser && m.uid === currentUser.uid;
+  if(m.system) {
+    var div = document.createElement('div');
+    div.className = 'system-msg';
+    div.textContent = m.text;
+    container.appendChild(div);
+    return;
+  }
+  var row = document.createElement('div');
+  row.className = 'msg-row' + (isMe?' me':'');
+  var avHtml = makeAvatar(m.avatar||DEF_CFG, 36);
+  var time = new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(isMe) {
+    row.innerHTML = '<div class="msg-body"><div class="msg-bubble">'+escHtml(m.text)+'</div><div class="msg-time">'+time+'</div></div><div class="msg-av">'+avHtml+'</div>';
+  } else {
+    row.innerHTML = '<div class="msg-av">'+avHtml+'</div><div class="msg-body"><div class="msg-name">'+escHtml(m.name||'')+'</div><div class="msg-bubble">'+escHtml(m.text)+'</div><div class="msg-time">'+time+'</div></div>';
+  }
+  container.appendChild(row);
+}
+
+async function sendMsg() {
+  var inp = document.getElementById('chat-inp');
+  var text = inp.value.trim();
+  if(!text || !currentUser || !userData) return;
+  inp.value = '';
+  await db.ref('messages').push({
+    uid: currentUser.uid,
+    name: userData.name || userData.username || 'Player',
+    avatar: userData.avatar || DEF_CFG,
+    text: text,
+    ts: Date.now()
+  });
+}
+
+function addEmoji(e) {
+  var inp = document.getElementById('chat-inp');
+  inp.value += e;
+  inp.focus();
+}
+
+// ─── ONLINE TRACKING ─────────────────────────────────────────────────────────
+function startOnlineTracking() {
+  if(!currentUser) return;
+  function heartbeat() {
+    db.ref('online/'+currentUser.uid).set({ts:Date.now(),name:userData&&userData.name||'Player'});
+  }
+  heartbeat();
+  onlineInterval = setInterval(heartbeat, 30000);
+  // Listen to online count
+  db.ref('online').on('value', function(snap) {
+    var now = Date.now(); var count = 0;
+    snap.forEach(function(child) {
+      var d = child.val();
+      if(d && now - d.ts < 90000) count++;
+    });
+    var el = document.getElementById('online-count');
+    if(el) el.textContent = '● '+count+' online';
+  });
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['chat','quiz','board','profile'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display='none';
+    document.getElementById('nav-'+t).classList.remove('active');
+  });
+  document.getElementById('tab-'+name).style.display = name==='chat'?'flex':'block';
+  document.getElementById('nav-'+name).classList.add('active');
+  // Fix chat height
+  if(name==='chat') {
+    var msgs = document.getElementById('chat-messages');
+    setTimeout(function(){ msgs.scrollTop = msgs.scrollHeight; }, 100);
+  }
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────────
+function buildCatGrid() {
+  var grid = document.getElementById('cat-grid');
+  grid.innerHTML = '';
+  Object.keys(QUIZ).forEach(function(cat) {
+    var info = QUIZ[cat];
+    var best = userData && userData.scores && userData.scores[cat] ? userData.scores[cat] : 0;
+    var card = document.createElement('button');
+    card.className = 'cat-card';
+    card.innerHTML = '<div class="cat-icon">'+info.icon+'</div><div class="cat-name">'+cat+'</div><div class="cat-info">8 questions</div>'+(best>0?'<div class="cat-best" style="color:'+info.color+'">Best: '+best+'/8 ⭐</div>':'');
+    card.onclick = function(){ startQuiz(cat); };
+    grid.appendChild(card);
+  });
+  updateQCoins();
+}
+
+function updateQCoins() {
+  var c = userData ? userData.coins||0 : 0;
+  var d = document.getElementById('q-coins-display');
+  if(d) d.textContent = '🪙 '+c;
+  var s = document.getElementById('q-coin-show');
+  if(s) s.textContent = '🪙'+c;
+}
+
+function startQuiz(cat) {
+  qCat = cat; qi = 0; qScore = 0; qChosen = null; qStreak = 0;
+  qShuffled = QUIZ[cat].questions.slice().sort(function(){ return Math.random()-0.5; });
+  var info = QUIZ[cat];
+  document.getElementById('quiz-cats').style.display='none';
+  document.getElementById('quiz-done').style.display='none';
+  document.getElementById('quiz-game').style.display='block';
+  document.getElementById('q-cat-title').textContent = info.icon+' '+cat;
+  document.getElementById('q-cat-title').style.color = info.color;
+  document.getElementById('q-card').style.borderColor = info.color;
+  document.getElementById('q-prog-fill').style.background = info.color;
+  document.getElementById('q-streak-show').style.display='none';
+  updateQCoins();
+  renderQuestion();
+}
+
+function renderQuestion() {
+  var q = qShuffled[qi];
+  document.getElementById('q-prog-fill').style.width = (qi/qShuffled.length*100)+'%';
+  document.getElementById('q-count').textContent = (qi+1)+'/'+qShuffled.length;
+  document.getElementById('q-text').textContent = q.q;
+  var opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  q.o.forEach(function(opt,i){
+    var b = document.createElement('button');
+    b.className = 'q-opt';
+    b.innerHTML = '<span class="opt-letter">'+['A','B','C','D'][i]+'.</span>'+escHtml(opt);
+    b.onclick = function(){ answerQ(i); };
+    opts.appendChild(b);
+  });
+  qChosen = null;
+}
+
+async function answerQ(idx) {
+  if(qChosen !== null) return;
+  qChosen = idx;
+  var q = qShuffled[qi];
+  var opts = document.getElementById('q-options').children;
+  opts[q.a].classList.add('correct');
+  if(idx !== q.a) opts[idx].classList.add('wrong');
+  // Disable all
+  for(var i=0;i<opts.length;i++) opts[i].onclick = null;
+
+  if(idx === q.a) {
+    var bonus = qStreak>=2 ? 2 : 1;
+    qScore++;
+    qStreak++;
+    var addC = 15*bonus;
+    userData.coins = (userData.coins||0)+addC;
+    userData.xp = (userData.xp||0)+20;
+    await db.ref('users/'+currentUser.uid+'/coins').set(userData.coins);
+    await db.ref('users/'+currentUser.uid+'/xp').set(userData.xp);
+    updateQCoins();
+    if(qStreak>=2){
+      var ss = document.getElementById('q-streak-show');
+      ss.style.display='block'; ss.textContent='🔥x'+qStreak;
+    }
+  } else {
+    qStreak=0;
+    document.getElementById('q-streak-show').style.display='none';
+  }
+
+  setTimeout(function(){
+    if(qi+1>=qShuffled.length) showQuizDone();
+    else { qi++; renderQuestion(); }
+  }, 900);
+}
+
+async function showQuizDone() {
+  document.getElementById('quiz-game').style.display='none';
+  document.getElementById('quiz-done').style.display='block';
+  var icons = ['😅','😅','😅','😊','😊','🌟','🌟','🌟','🏆'];
+  document.getElementById('done-icon').textContent = icons[qScore]||'🏆';
+  var titles = {0:'Keep Zapping!',1:'Keep Zapping!',2:'Keep Zapping!',3:'Good Try!',4:'Good Try!',5:'Well Played!',6:'Well Played!',7:'You Dominated!',8:'PERFECT!'};
+  document.getElementById('done-title').textContent = titles[qScore]||'Done!';
+  document.getElementById('done-sub').textContent = qScore+'/'+qShuffled.length+' correct • '+QUIZ[qCat].icon+' '+qCat;
+  document.getElementById('done-av').innerHTML = makeAvatar(userData&&userData.avatar||DEF_CFG, 90);
+  document.getElementById('done-reward').textContent = '+'+qScore*15+' coins • +'+qScore*20+' XP saved!';
+  // Save best score
+  var prev = userData&&userData.scores&&userData.scores[qCat] ? userData.scores[qCat] : 0;
+  if(qScore > prev) {
+    if(!userData.scores) userData.scores={};
+    userData.scores[qCat] = qScore;
+    await db.ref('users/'+currentUser.uid+'/scores/'+qCat).set(qScore);
+    var total = Object.values(userData.scores).reduce(function(a,b){return a+b;},0);
+    await db.ref('leaderboard/'+currentUser.uid).set({
+      name: userData.name||'Player',
+      username: userData.username||'',
+      avatar: userData.avatar||DEF_CFG,
+      scores: userData.scores,
+      total: total
+    });
+  }
+  updateProfile();
+  buildCatGrid();
+}
+
+function playAgain() { startQuiz(qCat); }
+
+function backToCategories() {
+  document.getElementById('quiz-game').style.display='none';
+  document.getElementById('quiz-done').style.display='none';
+  document.getElementById('quiz-cats').style.display='block';
+  qCat=null;
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────────────────────────
+async function loadBoard() {
+  var listEl = document.getElementById('board-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#7070a0">Loading...</div>';
+  try {
+    var snap = await db.ref('leaderboard').orderByChild('total').limitToLast(10).once('value');
+    var entries = [];
+    snap.forEach(function(child){ entries.push(Object.assign({uid:child.key},child.val())); });
+    entries.sort(function(a,b){ return (b.total||0)-(a.total||0); });
+    if(entries.length===0){ listEl.innerHTML='<div class="board-empty"><div style="font-size:48px;margin-bottom:12px">⚡</div><div style="font-weight:700">No scores yet!</div><div style="font-size:13px;margin-top:4px">Play a quiz to get on the board</div></div>'; return; }
+    listEl.innerHTML = '';
+    entries.forEach(function(e,i){
+      var medal = ['🥇','🥈','🥉'][i]||('#'+(i+1));
+      var isMe = currentUser && e.uid===currentUser.uid;
+      var catsHtml = Object.keys(e.scores||{}).map(function(cat){ return '<span style="font-size:11px;color:'+(QUIZ[cat]?QUIZ[cat].color:'#7070a0')+'">'+QUIZ[cat].icon+(e.scores[cat])+'</span>'; }).join('');
+      var row = document.createElement('div');
+      row.className = 'board-row'+(isMe?' me':'');
+      row.innerHTML = '<div class="board-medal">'+medal+'</div><div class="msg-av">'+makeAvatar(e.avatar||DEF_CFG,44)+'</div><div class="board-info"><div class="board-name">'+escHtml(e.name||'')+(isMe?'<span style="color:#a855f7;font-size:12px"> (you)</span>':'')+'</div><div class="board-user">@'+escHtml(e.username||'')+'</div><div class="board-cats">'+catsHtml+'</div></div><div class="board-score"><div class="board-total">'+(e.total||0)+'</div><div class="board-pts">points</div></div>';
+      listEl.appendChild(row);
+    });
+  } catch(err) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#ff6b6b">Error loading. Try again!</div>';
+  }
+}
+
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
+function updateProfile() {
+  if(!userData) return;
+  var xp = userData.xp||0;
+  var level = Math.floor(xp/150)+1;
+  var xpBar = (xp%150)/150*100;
+  document.getElementById('profile-av').innerHTML = makeAvatar(userData.avatar||DEF_CFG,120);
+  document.getElementById('profile-name').textContent = userData.name||'Player';
+  document.getElementById('profile-user').textContent = '@'+(userData.username||'')+' • Level '+level;
+  document.getElementById('xp-bar').style.width = xpBar+'%';
+  document.getElementById('xp-label').textContent = (xp%150)+'/150 XP to next level';
+  document.getElementById('s-coins').textContent = userData.coins||0;
+  document.getElementById('s-xp').textContent = xp;
+  document.getElementById('s-level').textContent = level;
+  var recList = document.getElementById('records-list');
+  recList.innerHTML = '';
+  Object.keys(QUIZ).forEach(function(cat){
+    var sc = userData.scores&&userData.scores[cat] ? userData.scores[cat] : 0;
+    var info = QUIZ[cat];
+    var row = document.createElement('div');
+    row.className = 'rec-row';
+    row.innerHTML = '<div class="rec-icon">'+info.icon+'</div><div class="rec-bar-wrap"><div class="rec-labels"><span class="rec-name">'+cat+'</span><span class="rec-score" style="color:'+info.color+'">'+sc+'/8</span></div><div class="rec-bar"><div class="rec-bar-fill" style="width:'+(sc/8*100)+'%;background:'+info.color+'"></div></div></div>';
+    recList.appendChild(row);
+  });
+  updateHeaderAvatar();
+}
+
+// ─── AVATAR EDITOR ────────────────────────────────────────────────────────────
+function showAvatarEditor() {
+  editCfg = Object.assign({},userData&&userData.avatar||DEF_CFG);
+  document.getElementById('profile-view').style.display='none';
+  document.getElementById('av-editor').style.display='block';
+  initEditPickers();
+}
+
+function hideAvatarEditor() {
+  document.getElementById('av-editor').style.display='none';
+  document.getElementById('profile-view').style.display='block';
+}
+
+async function saveAvatar() {
+  if(!currentUser) return;
+  userData.avatar = Object.assign({},editCfg);
+  await db.ref('users/'+currentUser.uid+'/avatar').set(userData.avatar);
+  updateProfile();
+  hideAvatarEditor();
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showErr(id,msg){ var e=document.getElementById(id); e.style.display='block'; e.textContent=msg; }
+function hideErr(id){ document.getElementById(id).style.display='none'; }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.onload = function() {
+  initRegPickers();
+  setTimeout(function(){ showPage('login'); }, 1800);
+};
+</script>
+</body>
+</html>
